@@ -4,6 +4,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { PushEvent, PullRequestEvent } from '@octokit/webhooks-types';
+import { OutputName } from './constants.js';
 
 export type ActionContext = typeof github.context;
 
@@ -40,13 +41,13 @@ export function process(context: ActionContext): void {
   }
 
   if (commitRangeBegin !== undefined && commitRangeEnd !== undefined) {
-    core.setOutput('commit-range-begin', commitRangeBegin);
-    core.setOutput('commit-range-end', commitRangeEnd);
+    core.setOutput(OutputName.BEGIN_SHA, commitRangeBegin);
+    core.setOutput(OutputName.END_SHA, commitRangeEnd);
     commitRange = commitRangeBegin + '..' + commitRangeEnd;
   }
 
-  core.setOutput('commit-range', commitRange);
-  core.setOutput('fetch-depth', fetchDepth);
+  core.setOutput(OutputName.COMMIT_RANGE, commitRange);
+  core.setOutput(OutputName.FETCH_DEPTH, fetchDepth);
 }
 
 /** The main function for the action. */
