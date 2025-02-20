@@ -63,6 +63,12 @@ export function process(context: ActionContext): void {
     commitRange = commitRangeBegin + '..' + commitRangeEnd;
   }
 
+  if (fetchDepth > 0) {
+    // Since the fetch depth as-is covers only all updated commits,
+    // include the parent of the first commit in the range, too!
+    ++fetchDepth;
+  }
+
   assert(commitRange, 'Commit range is invalid!');
   core.setOutput(OutputName.COMMIT_RANGE, commitRange);
 
