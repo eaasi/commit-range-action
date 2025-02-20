@@ -6,6 +6,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { PushEvent, PullRequestEvent } from '@octokit/webhooks-types';
 import { INITIAL_PUSH_BEFORE_COMMIT_SHA, OutputName } from './constants.js';
+import { findOldestCommit } from './utils.js';
 
 export type ActionContext = typeof github.context;
 
@@ -32,6 +33,13 @@ export function process(context: ActionContext): void {
         }
         commitRangeEnd = event.after;
         fetchDepth = event.commits.length;
+        if (event.forced) {
+          // The before commit could be overwritten during a forced push
+          // and would then become unreachable when a repo is cloned later!
+          // Hence, let's use the parent of the oldest pushed commit instead.
+          const commit = findOldestCommit(event);
+          commitRangeBegin = commit.id + '~';
+        }
         break;
       case 'pull_request':
         const pr = (payload as PullRequestEvent).pull_request;
