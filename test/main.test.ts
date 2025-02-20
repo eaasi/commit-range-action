@@ -4,7 +4,7 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { OutputName } from '../src/constants.js';
+import { INITIAL_PUSH_BEFORE_COMMIT_SHA, OutputName } from '../src/constants.js';
 import { process } from '../src/main.js';
 import { makeCommitSha, makePushEvent } from './utils.js';
 
@@ -50,5 +50,30 @@ test('process push event', () => {
   output.toHaveBeenCalledWith(OutputName.BEGIN_SHA, commitRangeBegin);
   output.toHaveBeenCalledWith(OutputName.END_SHA, commitRangeEnd);
   output.toHaveBeenCalledWith(OutputName.COMMIT_RANGE, commitRange);
+  output.toHaveBeenCalledWith(OutputName.FETCH_DEPTH, fetchDepth);
+});
+
+const initialPushVariants = [
+  '',
+  INITIAL_PUSH_BEFORE_COMMIT_SHA,
+  undefined,
+  null,
+];
+
+test.each(initialPushVariants)('process initial push event (first commit = "%s")', (commitRangeBegin) => {
+  const fetchDepth = 0;
+  const commitRangeEnd = makeCommitSha();
+  const ref = 'refs/heads/main';
+
+  // mock action's context
+  const context = makePushEvent(ref, commitRangeBegin as any, commitRangeEnd, fetchDepth);
+
+  // run action
+  process(context);
+
+  // check results...
+  const output = expect(core.setOutput);
+  output.toHaveBeenCalledTimes(2);
+  output.toHaveBeenCalledWith(OutputName.COMMIT_RANGE, ref);
   output.toHaveBeenCalledWith(OutputName.FETCH_DEPTH, fetchDepth);
 });
