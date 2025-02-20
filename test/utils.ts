@@ -31,7 +31,7 @@ export function makeDummyCommits(lastid: string, count: number): Array<Commit> {
   return commits;
 }
 
-export function makePushEvent(ref: string, before: string, after: string, count: number): ActionContext {
+export function makePushEvent(ref: string, before: string, after: string, count: number, forced = false): ActionContext {
   // mock action's context
   const context = structuredClone(github.context);
   context.ref = ref;
@@ -45,6 +45,7 @@ export function makePushEvent(ref: string, before: string, after: string, count:
 
   payload.after = after;
   payload.commits = makeDummyCommits(after, count);
+  payload.forced = forced;
 
   return context;
 }
