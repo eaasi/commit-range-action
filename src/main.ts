@@ -3,7 +3,7 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { PushEvent } from '@octokit/webhooks-types';
+import { PushEvent, PullRequestEvent } from '@octokit/webhooks-types';
 
 export type ActionContext = typeof github.context;
 
@@ -24,6 +24,12 @@ export function process(context: ActionContext): void {
         commitRangeBegin = event.before;
         commitRangeEnd = event.after;
         fetchDepth = event.commits.length;
+        break;
+      case 'pull_request':
+        const pr = (payload as PullRequestEvent).pull_request;
+        commitRangeBegin = pr.base.sha;
+        commitRangeEnd = pr.head.sha;
+        fetchDepth = pr.commits;
         break;
       default:
         throw new Error('Unknown event name: ' + context.eventName);
