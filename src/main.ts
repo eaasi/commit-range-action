@@ -5,9 +5,13 @@ import assert from 'node:assert';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { PushEvent, PullRequestEvent } from '@octokit/webhooks-types';
-import { OutputName } from './constants.js';
+import { INITIAL_PUSH_BEFORE_COMMIT_SHA, OutputName } from './constants.js';
 
 export type ActionContext = typeof github.context;
+
+function isCommitValid(commit: string): boolean {
+  return (commit && commit !== INITIAL_PUSH_BEFORE_COMMIT_SHA) ? true : false;
+}
 
 /** Process event's payload and compute action's outputs. */
 export function process(context: ActionContext): void {
@@ -23,7 +27,9 @@ export function process(context: ActionContext): void {
     switch (context.eventName) {
       case 'push':
         const event = payload as PushEvent;
-        commitRangeBegin = event.before;
+        if (isCommitValid(event.before)) {
+          commitRangeBegin = event.before;
+        }
         commitRangeEnd = event.after;
         fetchDepth = event.commits.length;
         break;
@@ -42,7 +48,7 @@ export function process(context: ActionContext): void {
   }
 
   if (commitRangeBegin !== undefined && commitRangeEnd !== undefined) {
-    assert(commitRangeBegin, 'Commit range begin is invalid!');
+    assert(isCommitValid(commitRangeBegin), 'Commit range begin is invalid!');
     core.setOutput(OutputName.BEGIN_SHA, commitRangeBegin);
     assert(commitRangeEnd, 'Commit range end is invalid!');
     core.setOutput(OutputName.END_SHA, commitRangeEnd);
