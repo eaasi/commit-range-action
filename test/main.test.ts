@@ -7,7 +7,7 @@ import * as github from '@actions/github';
 import { INITIAL_PUSH_BEFORE_COMMIT_SHA, OutputName } from '../src/constants.js';
 import { process } from '../src/main.js';
 import { findOldestCommit } from '../src/utils.js';
-import { makeCommitSha, makePushEvent } from './utils.js';
+import { makeCommitSha, makePushEvent, makePullRequestEvent } from './utils.js';
 
 vi.mock('@actions/core');
 
@@ -89,6 +89,28 @@ test('process forced push event', () => {
   const context = makePushEvent(ref, makeCommitSha(), commitRangeEnd, numCommits, true);
   const commitRangeBegin = findOldestCommit(context.payload as any).id + '~';
   const commitRange = commitRangeBegin + '..' + commitRangeEnd;
+
+  // run action
+  process(context);
+
+  // check results...
+  const output = expect(core.setOutput);
+  output.toHaveBeenCalledTimes(4);
+  output.toHaveBeenCalledWith(OutputName.BEGIN_SHA, commitRangeBegin);
+  output.toHaveBeenCalledWith(OutputName.END_SHA, commitRangeEnd);
+  output.toHaveBeenCalledWith(OutputName.COMMIT_RANGE, commitRange);
+  output.toHaveBeenCalledWith(OutputName.FETCH_DEPTH, fetchDepth);
+});
+
+test('process pull-request event', () => {
+  const numCommits = 10;
+  const fetchDepth = numCommits + 1;
+  const commitRangeBegin = makeCommitSha();
+  const commitRangeEnd = makeCommitSha();
+  const commitRange = commitRangeBegin + '..' + commitRangeEnd;
+
+  // mock action's context
+  const context = makePullRequestEvent('refs/heads/main', commitRangeBegin, commitRangeEnd, numCommits);
 
   // run action
   process(context);

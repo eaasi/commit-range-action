@@ -3,7 +3,7 @@
 
 import { randomBytes } from 'node:crypto';
 import * as github from '@actions/github';
-import { Commit, PushEvent } from '@octokit/webhooks-types';
+import { Commit, PushEvent, PullRequestEvent } from '@octokit/webhooks-types';
 import { ActionContext } from '../src/main.js';
 
 export function makeCommitSha(): string {
@@ -46,6 +46,33 @@ export function makePushEvent(ref: string, before: string, after: string, count:
   payload.after = after;
   payload.commits = makeDummyCommits(after, count);
   payload.forced = forced;
+
+  return context;
+}
+
+export function makePullRequestEvent(ref: string, base: string, head: string, count: number): ActionContext {
+  // mock action's context
+  const context = structuredClone(github.context);
+  context.ref = ref;
+  context.eventName = 'pull_request';
+  context.payload = {};
+
+  // mock event's payload
+  const payload = context.payload as PullRequestEvent;
+  const pr = payload.pull_request || {};
+  pr.commits = count;
+  pr.base = {
+    ...pr.base,
+    sha: base,
+  };
+
+  pr.head = {
+    ...pr.head,
+    sha: head,
+  };
+
+  if (!payload.pull_request)
+    payload.pull_request = pr;
 
   return context;
 }
