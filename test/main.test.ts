@@ -6,6 +6,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { OutputName } from '../src/constants.js';
 import { process } from '../src/main.js';
+import { makeCommitSha, makePushEvent } from './utils.js';
 
 vi.mock('@actions/core');
 
@@ -15,7 +16,7 @@ afterEach(() => {
 
 test('handle missing event payload', () => {
   // mock action's context
-  const context = github.context;
+  const context = structuredClone(github.context);
   context.ref = 'refs/heads/main';
   context.eventName = 'push';
   context.payload = {};
@@ -28,4 +29,26 @@ test('handle missing event payload', () => {
   output.toHaveBeenCalledTimes(2);
   output.toHaveBeenCalledWith(OutputName.COMMIT_RANGE, context.ref);
   output.toHaveBeenCalledWith(OutputName.FETCH_DEPTH, 0);
+});
+
+test('process push event', () => {
+  const numCommits = 5;
+  const fetchDepth = numCommits + 1;
+  const commitRangeBegin = makeCommitSha();
+  const commitRangeEnd = makeCommitSha();
+  const commitRange = commitRangeBegin + '..' + commitRangeEnd;
+
+  // mock action's context
+  const context = makePushEvent('refs/heads/main', commitRangeBegin, commitRangeEnd, numCommits);
+
+  // run action
+  process(context);
+
+  // check results...
+  const output = expect(core.setOutput);
+  output.toHaveBeenCalledTimes(4);
+  output.toHaveBeenCalledWith(OutputName.BEGIN_SHA, commitRangeBegin);
+  output.toHaveBeenCalledWith(OutputName.END_SHA, commitRangeEnd);
+  output.toHaveBeenCalledWith(OutputName.COMMIT_RANGE, commitRange);
+  output.toHaveBeenCalledWith(OutputName.FETCH_DEPTH, fetchDepth);
 });
