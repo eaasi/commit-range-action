@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Yale University
 // SPDX-License-Identifier: Apache-2.0
 
+import assert from 'node:assert';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { PushEvent, PullRequestEvent } from '@octokit/webhooks-types';
@@ -41,12 +42,17 @@ export function process(context: ActionContext): void {
   }
 
   if (commitRangeBegin !== undefined && commitRangeEnd !== undefined) {
+    assert(commitRangeBegin, 'Commit range begin is invalid!');
     core.setOutput(OutputName.BEGIN_SHA, commitRangeBegin);
+    assert(commitRangeEnd, 'Commit range end is invalid!');
     core.setOutput(OutputName.END_SHA, commitRangeEnd);
     commitRange = commitRangeBegin + '..' + commitRangeEnd;
   }
 
+  assert(commitRange, 'Commit range is invalid!');
   core.setOutput(OutputName.COMMIT_RANGE, commitRange);
+
+  assert(fetchDepth >= 0, 'Fetch depth is invalid!');
   core.setOutput(OutputName.FETCH_DEPTH, fetchDepth);
 }
 
