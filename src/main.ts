@@ -3,6 +3,7 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { PushEvent } from '@octokit/webhooks-types';
 
 export type ActionContext = typeof github.context;
 
@@ -12,6 +13,25 @@ export function process(context: ActionContext): void {
   let commitRangeEnd: string | undefined = undefined;
   let commitRange: string = context.ref;
   let fetchDepth: number = 0;
+
+  const payload = context.payload;
+
+  // NOTE: payload could be empty in certain cases!
+  if (payload && Object.keys(payload).length > 0) {
+    switch (context.eventName) {
+      case 'push':
+        const event = payload as PushEvent;
+        commitRangeBegin = event.before;
+        commitRangeEnd = event.after;
+        fetchDepth = event.commits.length;
+        break;
+      default:
+        throw new Error('Unknown event name: ' + context.eventName);
+    }
+  }
+  else {
+    core.warning('Event payload is missing! Using defaults.');
+  }
 
   if (commitRangeBegin !== undefined && commitRangeEnd !== undefined) {
     core.setOutput('commit-range-begin', commitRangeBegin);
