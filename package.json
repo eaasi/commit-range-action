@@ -1,6 +1,6 @@
 {
   "name": "commit-range-action",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "GitHub Action for determining updated commit ranges",
   "author": "Oleg Stobbe",
   "license": "Apache-2.0",
